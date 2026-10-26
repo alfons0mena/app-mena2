@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Garaje</title>
+<style>
+:root{--bg:#f0f2f5;--card:#fff;--tx:#333;--h:#1c2833;--mut:#7f8c8d;--line:#eee;--in:#fff;--inb:#ccc}
+@media(prefers-color-scheme:dark){:root{--bg:#121820;--card:#1e2733;--tx:#e6e9ee;--h:#0d1218;--mut:#9aa7b3;--line:#2c3744;--in:#151c26;--inb:#3a4756}}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:0;background:var(--bg);color:var(--tx)}
+header{background:var(--h);color:#fff;text-align:center;padding:1.2em 0;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+h1{margin:0;font-size:1.5em}
+.container{padding:15px;max-width:500px;margin:auto}
+.card{background:var(--card);padding:18px 20px;margin-bottom:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:5px solid var(--c,#e74c3c)}
+.card h2{margin:0;font-size:1.1em}
+.card small{display:block;color:var(--mut);font-weight:normal;font-size:.75em;margin-top:3px}
+.arrow{color:var(--mut)}
+.hidden{display:none}
+.box{background:var(--card);padding:15px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin-bottom:15px}
+.tabs{display:flex;margin-bottom:15px;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+.tab{flex:1;text-align:center;padding:12px 5px;cursor:pointer;font-weight:bold;font-size:.9em;border-bottom:3px solid transparent;opacity:.6}
+.tab.active{border-bottom-color:#2980b9;color:#2980b9;opacity:1}
+.tc{display:none}.tc.active{display:block}
+.btn{background:#2980b9;color:#fff;border:none;padding:12px 15px;border-radius:8px;cursor:pointer;width:100%;font-size:1em;margin-top:10px;font-weight:bold}
+.btn.back{background:#7f8c8d;width:auto;margin:0 0 15px;font-size:.9em}
+.btn.sec{background:#34495e}
+input,textarea{width:100%;padding:10px;margin:5px 0 12px;border:1px solid var(--inb);border-radius:6px;box-sizing:border-box;font-size:1em;background:var(--in);color:var(--tx);font-family:inherit}
+label{font-size:.9em}
+hr{border:0;border-top:1px solid var(--line);margin:15px 0}
+.hi{border-bottom:1px solid var(--line);padding:14px 0;position:relative}
+.hi:last-child{border:none}
+.hd{color:#e74c3c;font-weight:bold;font-size:.9em}
+.ht{font-weight:bold;font-size:1.05em;margin:4px 0}
+.hn{white-space:pre-wrap;color:var(--mut)}
+.img{max-width:100%;border-radius:8px;margin-top:10px;border:1px solid var(--line);display:block}
+.del{position:absolute;right:0;top:12px;background:none;border:none;font-size:1.1em;cursor:pointer;opacity:.7}
+.chip{color:#fff;padding:4px 10px;border-radius:15px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+#alerts{text-align:center;margin-bottom:15px;font-size:.85em;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.empty{color:var(--mut);text-align:center}
+</style>
+</head>
+<body>
+<header><h1>🔧 Mi Garaje</h1></header>
+
+<div class="container" id="main-menu">
+  <div id="menu"></div>
+  <div class="box">
+    <b>💾 Copia de seguridad</b>
+    <p style="font-size:.85em;color:var(--mut);margin:6px 0">Los datos viven solo en este navegador. Descarga una copia de vez en cuando.</p>
+    <button class="btn sec" onclick="exportData()">Exportar copia</button>
+    <button class="btn sec" onclick="document.getElementById('imp').click()">Importar copia</button>
+    <input type="file" id="imp" accept="application/json" class="hidden" onchange="importData(event)">
+  </div>
+</div>
+
+<div class="container hidden" id="vehicle-view">
+  <button class="btn back" onclick="goBack()">⬅ Volver</button>
+  <h2 id="vname" style="color:#2980b9;text-align:center;margin:0 0 8px"></h2>
+  <div id="alerts"></div>
+  <div class="tabs">
+    <div class="tab active" data-t="ficha" onclick="switchTab('ficha')">Ficha Técnica</div>
+    <div class="tab" data-t="mantenimiento" onclick="switchTab('mantenimiento')">Mantenimiento</div>
+    <div class="tab" data-t="otros" onclick="switchTab('otros')">Otros/Taller</div>
+  </div>
+
+  <div id="tab-ficha" class="tc active box">
+    <h3 style="margin-top:0;color:#e74c3c">⏰ Próximos Avisos</h3>
+    <label>Próxima ITV (dd/mm/aaaa):</label>
+    <input type="text" id="prox-itv" placeholder="Ej. 15/11/2026" onchange="saveFicha()">
+    <label>Próxima Revisión:</label>
+    <input type="text" id="prox-rev" placeholder="Ej. 160.000 km o Dic 2026" onchange="saveFicha()">
+    <label>Vencimiento del Seguro (dd/mm/aaaa):</label>
+    <input type="text" id="prox-seg" placeholder="Ej. 01/03/2027" onchange="saveFicha()">
+    <hr>
+    <h3>Datos del Vehículo</h3>
+    <label>Año de Matriculación:</label>
+    <input type="number" id="anio-mat" placeholder="Ej. 2016" onchange="saveFicha()">
+    <label>Matrícula:</label>
+    <input type="text" id="matricula" onchange="saveFicha()">
+    <label>Bastidor:</label>
+    <input type="text" id="bastidor" onchange="saveFicha()">
+    <label>Neumáticos / Motor:</label>
+    <input type="text" id="neumaticos" onchange="saveFicha()">
+    <label>Kilómetros actuales:</label>
+    <input type="number" id="km-act" onchange="saveFicha()">
+    <hr>
+    <h3>Historial de Fichas / Papeles</h3>
+    <label style="color:var(--mut)">Fotos de la ficha, permiso o seguro.</label>
+    <input type="file" id="ficha-input" accept="image/*" onchange="addDoc(event)">
+    <div id="docs" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+  <div id="tab-mantenimiento" class="tc">
+    <div class="box">
+      <h3 style="margin-top:0">➕ Añadir Mantenimiento</h3>
+      <form onsubmit="saveRecord(event,'mantenimiento')">
+        <input type="text" id="mant-type" placeholder="Ej. Aceite, Ruedas, Frenos" required>
+        <input type="number" id="mant-km" placeholder="Kilómetros" required>
+        <input type="number" step="0.01" id="mant-cost" placeholder="Coste € (opcional)">
+        <textarea id="mant-notes" rows="2" placeholder="Detalles"></textarea>
+        <label><b>Factura o foto (opcional):</b></label>
+        <input type="file" id="mant-file" accept="image/*">
+        <button type="submit" class="btn">Guardar Mantenimiento</button>
+      </form>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0;border-bottom:2px solid #2980b9;padding-bottom:5px">📜 Historial <span id="mant-total" style="float:right;font-size:.8em;color:var(--mut)"></span></h3>
+      <div id="mantenimiento-content"></div>
+    </div>
+  </div>
+
+  <div id="tab-otros" class="tc">
+    <div class="box">
+      <h3 style="margin-top:0">➕ Añadir Otro / Taller</h3>
+      <form onsubmit="saveRecord(event,'otros')">
+        <input type="text" id="otro-type" placeholder="Ej. Chapa, Seguro, Impuesto" required>
+        <input type="number" id="otro-km" placeholder="Kilómetros (opcional)">
+        <input type="number" step="0.01" id="otro-cost" placeholder="Coste € (opcional)">
+        <textarea id="otro-notes" rows="2" placeholder="Detalles"></textarea>
+        <label><b>Factura o foto (opcional):</b></label>
+        <input type="file" id="otro-file" accept="image/*">
+        <button type="submit" class="btn">Guardar Registro</button>
+      </form>
+    </div>
+    <div class="box">
+      <h3 style="margin-top:0;border-bottom:2px solid #2980b9;padding-bottom:5px">📂 Otros Registros <span id="otros-total" style="float:right;font-size:.8em;color:var(--mut)"></span></h3>
+      <div id="otros-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const VEHICLES = [
+  {name:'Toyota RAV4', icon:'🚗', color:'#e74c3c', def:{matricula:'3047JNT',bastidor:'JTMWRREVX0D008379',neumaticos:'2494 cc / Híbrido (114 kW) - Faltan neumáticos',anio:'2016'}},
+  {name:'Citroën C4 VTR', label:'Citroën C4 VTR Coupe', icon:'🏎️', color:'#3498db', def:{}},
+  {name:'Citroën C3 Pluriel', icon:'🚙', color:'#2ecc71', def:{bastidor:'VF7HB8HZB28075588',neumaticos:'185/65R15 (Opc: 195/50R16) | 1.4 HDi (50kW)',anio:'2005'}},
+  {name:'Derbi Atlantis 49', icon:'🛵', color:'#f1c40f', def:{matricula:'C7046BKB',bastidor:'VTHATL0AA1G168646',neumaticos:'49 cc',anio:'2001'}},
+  {name:'Kawasaki Vulcan 500', icon:'🏍️', color:'#27ae60', def:{neumaticos:'498 cc'}},
+  {name:'Renault Trafic', icon:'🚐', color:'#e67e22', def:{}},
+  {name:'Opel Combo', icon:'🚐', color:'#9b59b6', def:{}},
+  {name:'Ford Mondeo', icon:'🚘', color:'#16a085', def:{}}
+];
+const MANT_INICIAL = {'Toyota RAV4':[{type:'Chequeo Integral Sistema Híbrido',km:'14925',notes:'Sellado por NIMO-GORDILLO AUTOMÓVILES, S.A.',date:'09/05/2017',image:null}]};
+
+let cur = '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e) { return d; } };
+const set = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { alert('No hay espacio suficiente. Exporta una copia y borra fotos antiguas.'); return false; } };
+
+// Inicialización sin pisar datos existentes
+VEHICLES.forEach(v => {
+  const f = get(v.name + '_ficha', null);
+  if (!f) set(v.name + '_ficha', Object.assign({matricula:'',bastidor:'',neumaticos:'',proxItv:'',proxRev:'',proxSeg:'',anio:'',kmAct:''}, v.def));
+  else if (!f.anio && v.def.anio) { f.anio = v.def.anio; set(v.name + '_ficha', f); }
+  if (MANT_INICIAL[v.name] && localStorage.getItem(v.name + '_mantenimiento') === null) set(v.name + '_mantenimiento', MANT_INICIAL[v.name]);
+});
+
+function parseDate(s) {
+  const m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec((s || '').trim());
+  return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null;
+}
+function dayChip(icon, label, s, base) {
+  const d = parseDate(s);
+  let bg = base, extra = '';
+  if (d) {
+    const n = Math.ceil((d - new Date().setHours(0,0,0,0)) / 864e5);
+    if (n < 0) { bg = '#c0392b'; extra = ' (vencida)'; }
+    else if (n <= 30) { bg = '#e67e22'; extra = ` (${n} d)`; }
+    else bg = '#27ae60';
+  }
+  return `<span class="chip" style="background:${bg}">${icon} ${label}: ${esc(s)}${extra}</span>`;
+}
+
+function loadMenu() {
+  const y = new Date().getFullYear();
+  $('menu').innerHTML = VEHICLES.map((v, i) => {
+    const f = get(v.name + '_ficha', {});
+    const age = f.anio ? ` <span style="font-size:.7em;color:var(--mut);font-weight:normal">(${y - parseInt(f.anio)} años)</span>` : '';
+    const warn = [f.proxItv, f.proxSeg].some(s => { const d = parseDate(s); return d && d < Date.now() + 30 * 864e5; }) ? ' ⚠️' : '';
+    return `<div class="card" style="--c:${v.color}" onclick="openVehicle(${i})"><h2>${v.icon} ${esc(v.label || v.name)}${age}${warn}<small>${esc(f.matricula || 'Sin matrícula')}</small></h2><span class="arrow">➔</span></div>`;
+  }).join('');
+}
+
+function openVehicle(i) {
+  cur = VEHICLES[i].name;
+  $('main-menu').classList.add('hidden');
+  $('vehicle-view').classList.remove('hidden');
+  $('vname').textContent = VEHICLES[i].label || cur;
+  switchTab('ficha');
+  loadFicha(); loadLists();
+  scrollTo(0, 0);
+}
+function goBack() { $('main-menu').classList.remove('hidden'); $('vehicle-view').classList.add('hidden'); loadMenu(); }
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.t === t));
+  document.querySelectorAll('.tc').forEach(x => x.classList.remove('active'));
+  $('tab-' + t).classList.add('active');
+}
+
+function updateAlerts(d) {
+  let h = '';
+  if (d.proxItv) h += dayChip('🗓️', 'ITV', d.proxItv, '#e74c3c');
+  if (d.proxSeg) h += dayChip('🛡️', 'Seguro', d.proxSeg, '#8e44ad');
+  if (d.proxRev) h += `<span class="chip" style="background:#3498db">🔧 Rev: ${esc(d.proxRev)}</span>`;
+  if (d.kmAct) h += `<span class="chip" style="background:#34495e">⏱️ ${esc(d.kmAct)} km</span>`;
+  $('alerts').innerHTML = h;
+}
+function saveFicha() {
+  const d = {matricula:$('matricula').value, bastidor:$('bastidor').value, neumaticos:$('neumaticos').value, proxItv:$('prox-itv').value, proxRev:$('prox-rev').value, proxSeg:$('prox-seg').value, anio:$('anio-mat').value, kmAct:$('km-act').value};
+  set(cur + '_ficha', d); updateAlerts(d);
+}
+function loadFicha() {
+  const d = get(cur + '_ficha', {});
+  $('matricula').value = d.matricula || ''; $('bastidor').value = d.bastidor || ''; $('neumaticos').value = d.neumaticos || '';
+  $('prox-itv').value = d.proxItv || ''; $('prox-rev').value = d.proxRev || ''; $('prox-seg').value = d.proxSeg || '';
+  $('anio-mat').value = d.anio || ''; $('km-act').value = d.kmAct || '';
+  updateAlerts(d); loadDocs();
+}
+
+function getDocs() {
+  let docs = get(cur + '_fichaDocs', null);
+  if (!docs) {
+    docs = [];
+    const old = localStorage.getItem(cur + '_fichaImg');
+    if (old) { docs.push({image: old, date: 'Anterior'}); set(cur + '_fichaDocs', docs); }
+  }
+  return docs;
+}
+function loadDocs() {
+  const docs = getDocs();
+  $('docs').innerHTML = docs.length ? docs.map((d, i) => ({d, i})).reverse().map(({d, i}) =>
+    `<div class="hi" style="border:1px solid var(--line);border-radius:8px;padding:10px"><button class="del" style="right:8px" onclick="delDoc(${i})">🗑️</button><div style="font-size:.8em;color:var(--mut)">📅 ${esc(d.date)}</div><img src="${d.image}" class="img" alt="Documento"></div>`).join('')
+    : '<p class="empty">No hay fotos guardadas.</p>';
+}
+function addDoc(e) {
+  const f = e.target.files[0]; if (!f) return;
+  compress(f, 800, 0.6, url => {
+    const docs = getDocs(); docs.push({image: url, date: new Date().toLocaleDateString('es-ES')});
+    if (set(cur + '_fichaDocs', docs)) { e.target.value = ''; loadDocs(); }
+  });
+}
+function delDoc(i) {
+  if (!confirm('¿Borrar esta foto?')) return;
+  const docs = getDocs(); docs.splice(i, 1); set(cur + '_fichaDocs', docs); loadDocs();
+}
+
+function compress(file, maxW, q, cb) {
+  const r = new FileReader();
+  r.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxW) { h *= maxW / w; w = maxW; }
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(c.toDataURL('image/jpeg', q));
+    };
+    img.src = e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+function saveRecord(e, cat) {
+  e.preventDefault();
+  const p = cat === 'mantenimiento' ? 'mant' : 'otro', form = e.target;
+  const rec = {
+    type: $(p + '-type').value, km: $(p + '-km').value || '--', cost: $(p + '-cost').value,
+    notes: $(p + '-notes').value, date: new Date().toLocaleDateString('es-ES'), image: null
+  };
+  const done = img => {
+    rec.image = img;
+    const data = get(cur + '_' + cat, []); data.push(rec);
+    if (set(cur + '_' + cat, data)) { form.reset(); loadLists(); }
+  };
+  const f = $(p + '-file').files[0];
+  f ? compress(f, 800, 0.5, done) : done(null);
+}
+function delRecord(cat, i) {
+  if (!confirm('¿Borrar este registro?')) return;
+  const data = get(cur + '_' + cat, []); data.splice(i, 1); set(cur + '_' + cat, data); loadLists();
+}
+function loadLists() {
+  ['mantenimiento', 'otros'].forEach(cat => {
+    const data = get(cur + '_' + cat, []);
+    const total = data.reduce((s, r) => s + (parseFloat(r.cost) || 0), 0);
+    $(cat === 'mantenimiento' ? 'mant-total' : 'otros-total').textContent = total ? total.toFixed(2) + ' €' : '';
+    $(cat + '-content').innerHTML = data.length ? data.map((r, i) => ({r, i})).reverse().map(({r, i}) =>
+      `<div class="hi"><button class="del" onclick="delRecord('${cat}',${i})">🗑️</button>
+        <div class="hd">📅 ${esc(r.date)} | ⏱️ ${esc(r.km)} Km${r.cost ? ' | 💶 ' + esc(r.cost) + ' €' : ''}</div>
+        <div class="ht">🔧 ${esc(r.type)}</div>
+        <div class="hn">${esc(r.notes)}</div>
+        ${r.image ? `<img src="${r.image}" class="img" alt="Factura">` : ''}</div>`).join('')
+      : '<p class="empty">No hay registros.</p>';
+  });
+}
+
+function exportData() {
+  const out = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); out[k] = localStorage.getItem(k); }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], {type: 'application/json'}));
+  a.download = 'mi-garaje-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+}
+function importData(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const o = JSON.parse(r.result);
+      if (!confirm('Esto sustituirá los datos actuales. ¿Continuar?')) return;
+      Object.keys(o).forEach(k => localStorage.setItem(k, o[k]));
+      loadMenu(); alert('Copia importada.');
+    } catch (err) { alert('Archivo no válido.'); }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+}
+
+loadMenu();
+</script>
+</body>
+</html>
